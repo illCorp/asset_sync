@@ -86,7 +86,6 @@ module AssetSync
 
       gzipped = "#{path}/#{f}.gz"
       ignore = false
-      puts "made it past preamble..."
       if config.gzip? && File.extname(f) == ".gz"
         # Don't bother uploading gzipped assets if we are in gzip_compression mode
         # as we will overwrite file.css with file.css.gz if it exists.
