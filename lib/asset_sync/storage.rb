@@ -49,7 +49,7 @@ module AssetSync
       # fixes: https://github.com/rumblelabs/asset_sync/issues/16
       #        (work-around for https://github.com/fog/fog/issues/596)
       files = []
-      #bucket.files.each { |f| files << f.key }
+      bucket.files.each { |f| files << f.key }
       return files
     end
 
@@ -75,17 +75,18 @@ module AssetSync
 
     def upload_file(f)
       # TODO output files in debug logs as asset filename only.
+      expiration = Time.now + 1.year
+      # TODO fix the expiration date
       file = {
         :key => f,
         :body => File.open("#{path}/#{f}"),
         :public => true,
-        :cache_control => "public, max-age=31557600",
-        :expires => CGI.rfc1123_date(Time.now + 1.year)
+        :cache_control => "public, max-age=31557600"#
       }
 
       gzipped = "#{path}/#{f}.gz"
       ignore = false
-
+      puts "made it past preamble..."
       if config.gzip? && File.extname(f) == ".gz"
         # Don't bother uploading gzipped assets if we are in gzip_compression mode
         # as we will overwrite file.css with file.css.gz if it exists.
@@ -113,18 +114,22 @@ module AssetSync
       else
         STDERR.puts "Uploading: #{f}"
       end
-
-      file = bucket.files.create( file ) unless ignore
+    
+      begin
+        file = bucket.files.create( file ) unless ignore
+      rescue Exception => e
+        puts e
+      end
     end
 
     def upload_files
       # get a fresh list of remote files
-      remote_files = get_remote_files
+      #remote_files = get_remote_files
       # fixes: https://github.com/rumblelabs/asset_sync/issues/19
-      local_files_to_upload = local_files - remote_files
+      #local_files_to_upload = local_files - remote_files
 
       # Upload new files
-      local_files_to_upload.each do |f|
+      local_files.each do |f|
         next unless File.file? "#{path}/#{f}" # Only files.
         upload_file f
       end
